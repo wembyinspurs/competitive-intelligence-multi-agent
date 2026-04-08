@@ -7,7 +7,7 @@ import logging
 from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
+from langchain_community.chat_models import ChatTongyi
 
 from ..config import config
 from ..models.schemas import Battlecard
@@ -36,7 +36,7 @@ items. The elevator_pitch should be 2-3 sentences.
 class BattlecardAgent:
 
     def __init__(self) -> None:
-        self.llm = ChatOpenAI(
+        self.llm = ChatTongyi(
             model=config.llm.model,
             api_key=config.llm.api_key,
             temperature=0.4,
@@ -51,8 +51,9 @@ class BattlecardAgent:
     ) -> Battlecard:
         user_msg = (
             f"Competitor: {competitor}\n\n"
-            f"Comparison Matrix:\n{json.dumps(comparison, ensure_ascii=False, indent=2)}\n\n"
-            f"Research Insights:\n{json.dumps(research, ensure_ascii=False, indent=2)}\n\n"
+            # 修复：先model_dump()转成可序列化的字典
+            f"Comparison Matrix:\n{json.dumps(comparison.model_dump() if hasattr(comparison, 'model_dump') else comparison, ensure_ascii=False, indent=2)}\n\n"
+            f"Research Insights:\n{json.dumps([r.model_dump() if hasattr(r, 'model_dump') else r for r in research], ensure_ascii=False, indent=2)}\n\n"
             "Generate a battlecard as JSON."
         )
 

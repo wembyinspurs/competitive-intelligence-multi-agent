@@ -98,9 +98,9 @@ alert_agent = AlertAgent()
 async def quality_check(state: dict[str, Any]) -> dict[str, Any]:
     """Score the generated battlecard and decide whether to loop back."""
     from langchain_core.messages import HumanMessage, SystemMessage
-    from langchain_openai import ChatOpenAI
+    from langchain_community.chat_models import ChatTongyi
 
-    llm = ChatOpenAI(
+    llm = ChatTongyi(
         model=config.llm.model,
         api_key=config.llm.api_key,
         temperature=0.0,
@@ -115,8 +115,9 @@ async def quality_check(state: dict[str, Any]) -> dict[str, Any]:
         "  - Completeness (are strengths/weaknesses/objections covered?)\n"
         "  - Accuracy (does it align with the comparison data?)\n"
         "  - Actionability (can a sales rep use this immediately?)\n\n"
-        f"Battlecard:\n{json.dumps(battlecard, ensure_ascii=False, indent=2)}\n\n"
-        f"Comparison Matrix:\n{json.dumps(comparison, ensure_ascii=False, indent=2)}\n\n"
+        # 修复：先model_dump()转成可序列化的字典
+        f"Battlecard:\n{json.dumps(battlecard.model_dump() if hasattr(battlecard, 'model_dump') else battlecard, ensure_ascii=False, indent=2)}\n\n"
+        f"Comparison Matrix:\n{json.dumps(comparison.model_dump() if hasattr(comparison, 'model_dump') else comparison, ensure_ascii=False, indent=2)}\n\n"
         "Return ONLY a JSON object: {\"score\": <float>, \"feedback\": <string>}"
     )
 

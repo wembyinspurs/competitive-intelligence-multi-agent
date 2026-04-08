@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
+from langchain_community.chat_models import ChatTongyi
 
 from ..config import config
 from ..models.schemas import (
@@ -25,7 +25,7 @@ from ..tools.web_scraper import (
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = """\
+SYSTEM_PROMPT = """
 You are a Competitive Intelligence Monitor Agent.
 Your job is to analyze web page content and detect meaningful changes for a given
 competitor.  Given the OLD snapshot and NEW snapshot, identify:
@@ -46,7 +46,7 @@ class MonitorAgent:
     """Stateless agent callable that fits into a LangGraph node."""
 
     def __init__(self) -> None:
-        self.llm = ChatOpenAI(
+        self.llm = ChatTongyi(
             model=config.llm.model,
             api_key=config.llm.api_key,
             temperature=config.llm.temperature,
@@ -129,7 +129,17 @@ class MonitorAgent:
 
     @staticmethod
     def _default_urls(competitor: str) -> list[str]:
-        slug = competitor.lower().replace(" ", "")
+        # 修复：中文名称转拼音/英文域名，避免无效域名
+        competitor_map = {
+            "字节跳动": "bytedance",
+            "抖音": "douyin",
+            "微信": "weixin.qq",
+            "淘宝": "taobao",
+            "openai": "openai",
+            "stripe": "stripe",
+        }
+        # 优先用映射的英文域名，没有则转小写去空格
+        slug = competitor_map.get(competitor.lower(), competitor.lower().replace(" ", ""))
         return [
             f"https://{slug}.com",
             f"https://{slug}.com/pricing",

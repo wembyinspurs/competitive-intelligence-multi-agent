@@ -97,21 +97,34 @@ async def analyze(req: AnalyzeRequest):
         "reflexion_count": 0,
         "error": None,
     }
-
     try:
         final = await pipeline.ainvoke(initial_state)
     except Exception as exc:
         logger.exception("Pipeline failed")
         raise HTTPException(status_code=500, detail=str(exc))
 
+    # 核心修复：递归遍历所有字段，把datetime全部转成ISO字符串
+    def convert_datetime(obj):
+        if isinstance(obj, dict):
+            return {k: convert_datetime(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [convert_datetime(i) for i in obj]
+        elif isinstance(obj, datetime):
+            return obj.isoformat()
+        else:
+            return obj
+
+    # 对最终结果做全量序列化转换
+    final_safe = convert_datetime(final)
+
     return AnalyzeResponse(
-        competitor=final["competitor"],
-        changes_detected=final.get("changes_detected", []),
-        research_results=final.get("research_results", []),
-        comparison_matrix=final.get("comparison_matrix"),
-        battlecard=final.get("battlecard"),
-        alerts_sent=final.get("alerts_sent", []),
-        quality_score=final.get("quality_score", 0.0),
+        competitor=final_safe["competitor"],
+        changes_detected=final_safe.get("changes_detected", []),
+        research_results=final_safe.get("research_results", []),
+        comparison_matrix=final_safe.get("comparison_matrix"),
+        battlecard=final_safe.get("battlecard"),
+        alerts_sent=final_safe.get("alerts_sent", []),
+        quality_score=final_safe.get("quality_score", 0.0),
     )
 
 

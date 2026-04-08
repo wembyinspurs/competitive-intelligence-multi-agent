@@ -7,7 +7,7 @@ import logging
 from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
+from langchain_community.chat_models import ChatTongyi
 
 from ..config import config
 from ..models.schemas import ResearchInsight
@@ -34,7 +34,7 @@ Be factual and cite sources where possible.
 class ResearchAgent:
 
     def __init__(self) -> None:
-        self.llm = ChatOpenAI(
+        self.llm = ChatTongyi(
             model=config.llm.model,
             api_key=config.llm.api_key,
             temperature=config.llm.temperature,
@@ -56,6 +56,7 @@ class ResearchAgent:
         user_msg = (
             f"Competitor: {competitor}\n\n"
             f"Detected Changes:\n{changes_summary}\n\n"
+            # 修复：先model_dump()转成可序列化的字典
             f"Web Search Results:\n{json.dumps(search_results, ensure_ascii=False, indent=2)}\n\n"
             "Provide deep research insights as JSON."
         )

@@ -1,18 +1,24 @@
 """Pydantic models shared across all agents and the API layer."""
-
 from __future__ import annotations
-
 from datetime import datetime
 from enum import Enum
 from typing import Optional
+from pydantic import BaseModel, Field, field_serializer
 
-from pydantic import BaseModel, Field
+
+# 基础模型：统一处理所有datetime字段的序列化
+class BaseSchema(BaseModel):
+    @field_serializer("*", when_used="always")
+    def serialize_all_fields(self, value):
+        # 所有datetime字段自动转ISO标准字符串
+        if isinstance(value, datetime):
+            return value.isoformat()
+        return value
 
 
 # ---------------------------------------------------------------------------
 # Enums
 # ---------------------------------------------------------------------------
-
 class ChangeType(str, Enum):
     PRICING = "pricing"
     PRODUCT = "product"
@@ -33,8 +39,7 @@ class Severity(str, Enum):
 # ---------------------------------------------------------------------------
 # Monitor Agent models
 # ---------------------------------------------------------------------------
-
-class CompetitorChange(BaseModel):
+class CompetitorChange(BaseSchema):
     competitor: str
     change_type: ChangeType
     title: str
@@ -45,7 +50,7 @@ class CompetitorChange(BaseModel):
     raw_data: dict = Field(default_factory=dict)
 
 
-class MonitorResult(BaseModel):
+class MonitorResult(BaseSchema):
     competitor: str
     changes: list[CompetitorChange] = Field(default_factory=list)
     checked_at: datetime = Field(default_factory=datetime.utcnow)
@@ -54,8 +59,7 @@ class MonitorResult(BaseModel):
 # ---------------------------------------------------------------------------
 # Research Agent models
 # ---------------------------------------------------------------------------
-
-class ResearchInsight(BaseModel):
+class ResearchInsight(BaseSchema):
     topic: str
     summary: str
     key_findings: list[str] = Field(default_factory=list)
@@ -63,7 +67,7 @@ class ResearchInsight(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0, default=0.8)
 
 
-class ResearchResult(BaseModel):
+class ResearchResult(BaseSchema):
     competitor: str
     insights: list[ResearchInsight] = Field(default_factory=list)
     analyzed_at: datetime = Field(default_factory=datetime.utcnow)
@@ -72,15 +76,14 @@ class ResearchResult(BaseModel):
 # ---------------------------------------------------------------------------
 # Compare Agent models
 # ---------------------------------------------------------------------------
-
-class DimensionScore(BaseModel):
+class DimensionScore(BaseSchema):
     dimension: str
     our_score: float = Field(ge=0.0, le=10.0)
     competitor_score: float = Field(ge=0.0, le=10.0)
     notes: str = ""
 
 
-class ComparisonMatrix(BaseModel):
+class ComparisonMatrix(BaseSchema):
     competitor: str
     dimensions: list[DimensionScore] = Field(default_factory=list)
     overall_assessment: str = ""
@@ -90,8 +93,7 @@ class ComparisonMatrix(BaseModel):
 # ---------------------------------------------------------------------------
 # Battlecard Agent models
 # ---------------------------------------------------------------------------
-
-class Battlecard(BaseModel):
+class Battlecard(BaseSchema):
     competitor: str
     our_strengths: list[str] = Field(default_factory=list)
     our_weaknesses: list[str] = Field(default_factory=list)
@@ -106,8 +108,7 @@ class Battlecard(BaseModel):
 # ---------------------------------------------------------------------------
 # Alert Agent models
 # ---------------------------------------------------------------------------
-
-class Alert(BaseModel):
+class Alert(BaseSchema):
     competitor: str
     title: str
     message: str
@@ -119,10 +120,8 @@ class Alert(BaseModel):
 # ---------------------------------------------------------------------------
 # Pipeline state (used by LangGraph)
 # ---------------------------------------------------------------------------
-
-class CIState(BaseModel):
+class CIState(BaseSchema):
     """Top-level state flowing through the LangGraph pipeline."""
-
     competitor: str
     changes_detected: list[CompetitorChange] = Field(default_factory=list)
     research_results: list[ResearchInsight] = Field(default_factory=list)

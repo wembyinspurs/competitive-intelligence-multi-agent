@@ -9,9 +9,13 @@ load_dotenv()
 
 @dataclass(frozen=True)
 class LLMConfig:
-    provider: str = os.getenv("LLM_PROVIDER", "openai")
-    model: str = os.getenv("LLM_MODEL", "gpt-4o")
-    api_key: str = os.getenv("OPENAI_API_KEY", "")
+    # 1. 调整provider默认值为tongyi（通义千问），保留环境变量可控
+    provider: str = os.getenv("LLM_PROVIDER", "tongyi")
+    # 2. 通义千问默认模型改为qwen-plus（也可根据需求选qwen-turbo/qwen-max等）
+    model: str = os.getenv("LLM_MODEL", "qwen-plus")
+    # 3. 替换API Key环境变量为通义千问依赖的DASHSCOPE_API_KEY
+    api_key: str = os.getenv("DASHSCOPE_API_KEY", "")
+    # 4. 温度/最大令牌数保留（通义千问兼容这两个参数）
     temperature: float = float(os.getenv("LLM_TEMPERATURE", "0.3"))
     max_tokens: int = int(os.getenv("LLM_MAX_TOKENS", "4096"))
 
