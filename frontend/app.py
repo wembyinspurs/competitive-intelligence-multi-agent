@@ -46,7 +46,7 @@ def get_competitor_list():
     except:
         return []
 
-# 生成Word报告
+# 生成Word竞品分析报告
 def generate_word_report(competitor_name, analysis_result, quality_score):
     doc = Document()
     # 标题
